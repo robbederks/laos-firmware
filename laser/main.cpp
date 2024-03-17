@@ -44,7 +44,7 @@
 // uncomment this to get debugging output in file parser
 // #define READ_FILE_DEBUG
 // #define READ_FILE_DEBUG_VERBOSE
- 
+
 #include "pins.h"
 #include "global.h"
 #include "ConfigFile.h"
@@ -84,23 +84,23 @@ extern "C" void mbed_reset();
 /**
 *** Main function
 **/
-int main() 
+int main()
 {
   systime.start();
   //float x, y, z;
   eth_speed = 1;
-  
+
   dsp = new LaosDisplay();
-  printf( VERSION_STRING "...\nBOOT...\n" ); 
+  printf( VERSION_STRING "...\nBOOT...\n" );
   mnu = new LaosMenu(dsp);
   eth_speed=0;
 
- printf("TEST SD...\n"); 
+ printf("TEST SD...\n");
   char testfile[] = "test.txt";
   FILE *fp = sd.openfile(testfile, "wb");
   if ( fp == NULL )
   {
-    mnu->SetScreen("SD NOT READY!"); 
+    mnu->SetScreen("SD NOT READY!");
     wait(2.0);
     mbed_reset();
   }
@@ -110,45 +110,45 @@ int main()
     fclose(fp);
     removefile(testfile);
   }
-  
+
   // See if there's a .bin file on the SD
   // if so, put it on the MBED and reboot
   if (SDcheckFirmware()) mbed_reset();
-  
+
   mnu->SetScreen(VERSION_STRING);
   printf("START...\n");
   cfg =  new GlobalConfig("config.txt");
-  mnu->SetScreen("CONFIG OK...."); 
+  mnu->SetScreen("CONFIG OK....");
   printf("CONFIG OK...\n");
   if (!cfg->nodisplay)
     dsp->testI2C();
-  
-  printf("MOTION...\n"); 
+
+  printf("MOTION...\n");
   mot = new LaosMotion();
-    
+
   eth = EthConfig();
   eth_speed=1;
-      
+
   printf("SERVER...\n");
   srv = new TFTPServer(cfg->port);
-  mnu->SetScreen("SERVER OK...."); 
+  mnu->SetScreen("SERVER OK....");
   wait(0.5);
   mnu->SetScreen(10); // IP
   wait(1.0);
-  
+
   printf("RUN...\n");
-  
+
   // Wait for key, and then home
-  
+
   if ( cfg->autohome )
   {
     printf("WAIT FOR COVER...\n");
     wait(1);
-  
-  
+
+
   // Start homing
     mnu->SetScreen("WAIT FOR COVER....");
-    //if ( cfg->waitforstart ) 
+    //if ( cfg->waitforstart )
       while ( !mot->isStart() );
     mnu->SetScreen("HOME....");
     printf("HOME...\n");
@@ -162,7 +162,7 @@ int main()
 
   // clean sd card?
   if (cfg->cleandir) cleandir();
-  mnu->SetScreen("");  
+  mnu->SetScreen("");
 
   if (cfg->nodisplay) {
     printf("No display set\n\r");
@@ -176,10 +176,10 @@ int main()
 void main_nodisplay() {
   float x, y, z = 0;
   led1=led2=led3=led4=0;
-  
-  // main loop  
-   while(1) 
-  {  
+
+  // main loop
+   while(1)
+  {
     int filecnt = srv->fileCnt();
     mnu->SetScreen("Wait for file ...");
     while (srv->State() == listen)
@@ -191,15 +191,15 @@ void main_nodisplay() {
     if (filecnt < srv->fileCnt()) {
       mot->reset();
       plan_get_current_position_xyz(&x, &y, &z);
-       printf("%f %f\n", x,y); 
-       mnu->SetScreen("Laser BUSY..."); 
-    
+       printf("%f %f\n", x,y);
+       mnu->SetScreen("Laser BUSY...");
+
        char name[32];
        srv->getFilename(name);
        printf("Now processing file: '%s'\n\r", name);
        FILE *in = sd.openfile(name, "r");
        while (!feof(in))
-       { 
+       {
          while (!mot->ready() );
          mot->write(readint(in));
        }
@@ -214,9 +214,9 @@ void main_nodisplay() {
 }
 
 void main_menu() {
-  // main loop  
+  // main loop
   led1=led2=led3=led4=0;
-                
+
   mnu->SetScreen(1);
   while (1) {
     int filecnt = srv->fileCnt();
@@ -243,6 +243,6 @@ void main_menu() {
           }
         }
       }
-    }           
+    }
   }
 }
