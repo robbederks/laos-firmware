@@ -220,9 +220,9 @@ void LaosMotion::write(int i) {
             break;
           case 2:
             action.target.y = (i - ofsy) / 1000.0;
-            ;
+            action.target.z = (i - ofsz) / 1000.0;
+
             step = 0;
-            action.target.z = 0;
             action.param = power;
             action.ActionType = (command ? AT_LASER : AT_MOVE);
             if (bitmap_enable && (action.ActionType == AT_LASER)) {
@@ -260,19 +260,19 @@ void LaosMotion::write(int i) {
             break;
         }
         break;
-      case 2:  // move z
-        switch (step) {
-          case 1:
-            step = 0;
-            z = action.target.z;
-            action.param = power;
-            action.ActionType = AT_MOVE;
-            action.target.feed_rate = 60.0 * cfg->speed;
-            plan_buffer_line(&action);
-            UpdatePlannedCoordinates(&action);
-            break;
-        }
-        break;
+      // case 2:  // move z
+      //   switch (step) {
+      //     case 1:
+      //       step = 0;
+      //       z = action.target.z;
+      //       action.param = power;
+      //       action.ActionType = AT_MOVE;
+      //       action.target.feed_rate = 60.0 * cfg->speed;
+      //       plan_buffer_line(&action);
+      //       UpdatePlannedCoordinates(&action);
+      //       break;
+      //   }
+      //   break;
       case 4:  // set x,y,z (absolute)
         switch (step) {
           case 1:
@@ -280,9 +280,10 @@ void LaosMotion::write(int i) {
             break;
           case 2:
             y = i;
+            z = i;
             break;
           case 3:
-            z = i;
+            // z = i;
             setPositionRelativeToOrigin(x, y, z);
             step = 0;
             break;
