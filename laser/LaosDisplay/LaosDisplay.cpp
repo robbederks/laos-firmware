@@ -1,6 +1,6 @@
 /**
  * LaosDisplay.cpp
- * User interface class, for 
+ * User interface class, for
  *    => 2x16 display and keypad
  *    => serial connection
  *
@@ -53,7 +53,7 @@ LaosDisplay::LaosDisplay()
   // test I2C, if we cannot read, display is not attached, enable simulation
   // wait 1 second to make sure that I2C has time to power on!
   wait(3);
-  sim = i2c.read(_I2C_ADDRESS ,&key, 1) != 0; 
+  sim = i2c.read(_I2C_ADDRESS ,&key, 1) != 0;
   if (sim) {
     printf("LaosDisplay()\n");
     printf("Display() Simulation=ON, I2C Baudrate=%d\n", i2cBaud  );
@@ -68,9 +68,9 @@ void LaosDisplay::testI2C() {
 }
 
 // Write string
-void LaosDisplay::write(char *s) 
-{  
-  if ( sim ) 
+void LaosDisplay::write(char *s)
+{
+  if ( sim )
   {
     while (*s)
 #if !MRI_ENABLE
@@ -88,7 +88,7 @@ void LaosDisplay::write(char *s)
 }
 
 // Clear screen
-void LaosDisplay::cls() 
+void LaosDisplay::cls()
 {
    char s[2];
    s[0] = _I2C_HOME;
@@ -97,7 +97,7 @@ void LaosDisplay::cls()
 }
 
 // Read Key
-int LaosDisplay::read() 
+int LaosDisplay::read()
 {
   char key = 0;
   if (sim)
@@ -115,11 +115,11 @@ int LaosDisplay::read()
   }
   if ((key < '1') || (key > '9'))
     key = 0;
-  return key;   
+  return key;
 }
 
 // Read Key non-blocking (needs to be called often to retrieve key)
-int LaosDisplay::read_nb() 
+int LaosDisplay::read_nb()
 {
   char key = 0;
   static char bg_buf = 0;  // Static buffer for background retrieve
@@ -143,7 +143,7 @@ int LaosDisplay::read_nb()
   }
   if ((key < '1') || (key > '9'))
     key = 0;
-  return key;   
+  return key;
 }
 
 /**
@@ -153,7 +153,7 @@ int LaosDisplay::read_nb()
 *** in the lines, the following replacements are made:
 *** $$$$$$ : "$" chars are replaced with the string argument for this screen (left alligned), if argument is NULL, spaces are inserted
 *** +9876543210: "+" and numbers are replaced with decimal digits from the integer arguments (the "+" sign is replaced with '-' if the argument is negative
-*** 
+***
 ***
 **/
 inline char digit(int i, int n)
@@ -169,7 +169,7 @@ inline char digit(int i, int n)
 void LaosDisplay::ShowScreen(const char *l, int *arg, char *s)
 {
   char c, next=0,surpress=1;
-  char str[128],*p; 
+  char str[128],*p;
   p = str;
   *p++ = _I2C_HOME;
   while ( *l )
@@ -177,28 +177,28 @@ void LaosDisplay::ShowScreen(const char *l, int *arg, char *s)
     c=*l;
     switch ( c )
     {
-    case '$': 
+    case '$':
       if (s != NULL && *s)
         c = *s++;
-      else 
+      else
         c = ' ';
       break;
-      
+
     case '+':
       if (arg != NULL && *arg < 0)
         c = '-';
-      else 
+      else
         c = '+';
       break;
-        
-    case '0': next=1; surpress=0; 
-    case '1': case '2': case '3': case '4': 
+
+    case '0': next=1; surpress=0;
+    case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
       char d = ' ';
       if (arg != NULL )
       {
         d = digit(*arg, *l-'0');
-        if ( d == '0' && surpress  ) // supress leading zeros 
+        if ( d == '0' && surpress  ) // supress leading zeros
           d =  ' ';
         else
           surpress = 0;

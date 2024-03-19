@@ -24,14 +24,14 @@
  *
  * Simple, not (time) efficient. For every request, the complete file is reset and read again
  *
- @code 
+ @code
  file format
- 
+
  ; comment
  key value [newline || comment]
 
  For example:
- 
+
  ; This is a test config file
  ip 192.168.1.1
  port 1234 ; the key is "port" the value is "1234". The rest is comment
@@ -50,7 +50,7 @@
       * To close the file: destroy this ConfigFile object! A simple way is to enclose the creation
       * of this object inside a code block
       * Example:
-      * @code 
+      * @code
       * char ip[16];
       * int port;
       * {
@@ -75,24 +75,24 @@ public:
   * @param key name of the key in the file
   * @param value pointer to buffer that receives the value
   * @param maxlen the maximum length of the value. If the actual value is longer, it is truncated
-  * @param def Default value. If the key is not found in the file, this value is copied. 
+  * @param def Default value. If the key is not found in the file, this value is copied.
   * @return "true" if the key is found "false" is key is not found (default value is returned)
-  */ 
+  */
     bool Value(const std::string& key, char *value,  size_t maxlen, const std::string& def);
 
 /** Read Integer value. If file is not open, or key does not exist: copy default value (return false)
   * @param key name of the key in the file
   * @param value pointer to integer that receives the value
-  * @param def Default value. If the key is not found in the file, this value is copied. 
+  * @param def Default value. If the key is not found in the file, this value is copied.
   * @return "true" if the key is found "false" is key is not found (default value is returned)
-  */ 
+  */
     bool Value(const std::string& key, int *value, int def);
-    
+
   /** See if file was present
-  * @return "true" if file is open, "false" file is not found 
-  */ 
+  * @return "true" if file is open, "false" file is not found
+  */
   bool IsOpen(void) { return fp != NULL; }
-  
+
 private:
     FILE *fp;
 

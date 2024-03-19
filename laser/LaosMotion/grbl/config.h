@@ -37,7 +37,7 @@ typedef struct config_s
   int32_t maximum_feedrate_z;
   int32_t maximum_feedrate_e;
   float  acceleration;
-  float  junction_deviation; 
+  float  junction_deviation;
 } config_t;
 
 #endif

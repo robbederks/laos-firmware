@@ -85,17 +85,17 @@ int MODI2C::read(int address, char *data, int length, bool repeated) {
     Data.status = &stat;
 
     while(!addBuffer(Data, I2CMODULE));
-    
+
     I2CBuffer *Buffer;
     if (I2CMODULE == LPC_I2C1) {
         Buffer = &Buffer1;
     } else {
         Buffer = &Buffer2;
     }
-    
+
     while(Buffer->queue!=0)
         wait_us(1);
-    
+
     if (stat==0x58)         //Return zero if ended correctly, otherwise return return code.
         return 0;
     else

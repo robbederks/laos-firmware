@@ -18,12 +18,12 @@
  *
  *   You should have received a copy of the GNU General Public License
  *   along with LaOS.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 #include "ConfigFile.h"
 
 // Make new config file object
-ConfigFile::ConfigFile(char *file) 
+ConfigFile::ConfigFile(char *file)
 {
   printf("ConfigFile:ConfigFile (%s)\n\r", file);
   extern LaosFileSystem sd;
@@ -32,11 +32,11 @@ ConfigFile::ConfigFile(char *file)
     char tmpname[32];
     sprintf(tmpname, "/local/%s", file);
     fp = fopen(tmpname,"r");
-  } 
+  }
 }
 
 // Destroy a config file (closes the file handle)
-ConfigFile::~ConfigFile() 
+ConfigFile::~ConfigFile()
 {
   if ( fp != NULL )
     fclose(fp);
@@ -57,30 +57,30 @@ bool ConfigFile::Value(const std::string& key, char *value,  size_t maxlen, cons
 
   n = strlen(newkey);
   fseek(fp, 0L, SEEK_SET);
-  while( s != 99  ) 
+  while( s != 99  )
   {
     c = fgetc(fp);
-    if ( c == EOF ) 
+    if ( c == EOF )
       break;
     // printf("%d(%d): '%c'\n\r", s, m, c);
     switch( s  )// sate machine
-    { 
+    {
       case 0: // (re) start: note: no break; fall through to case 1
-        m=0; 
+        m=0;
         s=1;
       case 1: // read newkey, skip spaces
-        if ( c == newkey[m] ) 
-          m++; 
-        else 
+        if ( c == newkey[m] )
+          m++;
+        else
           s = 0;
-        if ( c == ';' ) 
-          s = 10; 
-        else if ( c == ' ' || c == '\t' || c == '\n' || c == '\r') 
+        if ( c == ';' )
+          s = 10;
+        else if ( c == ' ' || c == '\t' || c == '\n' || c == '\r')
         {
           if ( n == m ) // newkey found
           {
             s = 2;
-            m = 0; 
+            m = 0;
           }
           else
             s = 0;
@@ -88,24 +88,24 @@ bool ConfigFile::Value(const std::string& key, char *value,  size_t maxlen, cons
         break;
       case 2: // newkey matched, skip whitepaces upto the first char
         if ( c == ';' ) s = 99;
-        else if ( c != ' ' && c != '\t' ) 
-        { 
+        else if ( c != ' ' && c != '\t' )
+        {
           s = 3;
           m = 1;
-          if ( m < maxlen) 
+          if ( m < maxlen)
             *value++ = c;
         }
         break;
-        
+
       case 3: // copy value content, upto eol or comment
-        if ( m == maxlen || c == '\n' || c == '\r' || c == ';' ) 
+        if ( m == maxlen || c == '\n' || c == '\r' || c == ';' )
           s = 99;
         else
         {
           m++;
           *value++ = c;
         }
-        break;         
+        break;
       case 10: // skip comments, upto eol or eof
         if ( c == '\n' || c == '\r' ) s = 0;
         break;
@@ -115,14 +115,14 @@ bool ConfigFile::Value(const std::string& key, char *value,  size_t maxlen, cons
   {
     *value = 0; // terminate string
     printf("'%s'='%s'\n\r", newkey,v);
-    return true; 
+    return true;
   }
   else
   {
     strncpy(value, def.c_str(), maxlen);
     printf("'%s'='%s' (default)\n\r", newkey,v);
     return false;
-  } 
+  }
 }
 
 // Read int value
