@@ -22,115 +22,108 @@
  *
  *
  */
-#include "global.h"
 #include "LaosMotion.h"
-#include  "planner.h"
-#include  "stepper.h"
-#include  "pins.h"
+
+#include "global.h"
+#include "pins.h"
+#include "planner.h"
+#include "stepper.h"
 
 // #define DO_MOTION_TEST 1
 
 // globals
-unsigned int step=0;
-int command=0;
-int mark_speed = 100; // 100 [mm/sec]
-int bitmap_speed = 100; // 100 [mm/sec]
-int power = 10000 ;
+unsigned int step = 0;
+int command = 0;
+int mark_speed = 100;    // 100 [mm/sec]
+int bitmap_speed = 100;  // 100 [mm/sec]
+int power = 10000;
 // next planner action to enqueue
-tActionRequest  action;
+tActionRequest action;
 
 // position offsets
-static int ofsx=0, ofsy=0, ofsz=0;
+static int ofsx = 0, ofsy = 0, ofsz = 0;
 
 // Command interpreter
-int param=0, val=0;
+int param = 0, val = 0;
 
 // Bitmap buffer
-#define BITMAP_PIXELS  (8192)
-#define BITMAP_SIZE (BITMAP_PIXELS/32)
+#define BITMAP_PIXELS (8192)
+#define BITMAP_SIZE (BITMAP_PIXELS / 32)
 unsigned long bitmap[BITMAP_SIZE];
-unsigned long bitmap_width=0; // nr of pixels
-unsigned long bitmap_size=0; // nr of bytes
-unsigned char bitmap_bpp=1, bitmap_enable=0;
+unsigned long bitmap_width = 0;  // nr of pixels
+unsigned long bitmap_size = 0;   // nr of bytes
+unsigned char bitmap_bpp = 1, bitmap_enable = 0;
 
 /**
 *** LaosMotion() Constructor
 *** Make new motion object
 **/
-LaosMotion::LaosMotion()
-{
+LaosMotion::LaosMotion() {
   extern GlobalConfig *cfg;
 #if DO_MOTION_TEST
   tActionRequest act[2];
-  int i=0;
+  int i = 0;
   Timer t;
 #endif
   pwm.period(1.0 / cfg->pwmfreq);
-  pwm = cfg->pwmmin/100.0;
-  if ( laser == NULL ) laser = new DigitalOut(LASER_PIN);
+  pwm = cfg->pwmmin / 100.0;
+  if (laser == NULL) laser = new DigitalOut(LASER_PIN);
   *laser = LASEROFF;
 
   mark_speed = cfg->speed;
-  //start.mode(PullUp);
+  // start.mode(PullUp);
   xhome.mode(PullUp);
   yhome.mode(PullUp);
   isHome = false;
-    setOriginAbsolute(0,0,0);
+  setOriginAbsolute(0, 0, 0);
   plan_init();
   st_init();
   reset();
   mark_speed = cfg->speed;
   bitmap_speed = cfg->xspeed;
   action.param = 0;
-  action.target.x = action.target.y = action.target.z = action.target.e =0;
-  action.target.feed_rate = 60*mark_speed;
+  action.target.x = action.target.y = action.target.z = action.target.e = 0;
+  action.target.feed_rate = 60 * mark_speed;
 
 #if DO_MOTION_TEST
   t.start();
-  act[0].ActionType = act[1].ActionType =  AT_MOVE;
+  act[0].ActionType = act[1].ActionType = AT_MOVE;
   act[0].target.feed_rate = 60 * 100;
   act[1].target.feed_rate = 60 * 200;
   act[0].target.x = act[0].target.y = act[0].target.z = act[0].target.e = 0;
   act[1].target.x = act[1].target.y = act[1].target.z = act[1].target.e = 100;
   act[1].target.y = 200;
-  while(1)
-  {
-    while( plan_queue_full() ) led3 = !led3;
+  while (1) {
+    while (plan_queue_full()) led3 = !led3;
     led1 = 1;
     i++;
-    if ( i )
+    if (i)
       printf("%d PING...\n", t.read_ms());
     else
       printf("%d PONG...\n", t.read_ms());
-    if ( i > 1 || i<0) i = 0;
-    plan_buffer_line (&act[i]);
+    if (i > 1 || i < 0) i = 0;
+    plan_buffer_line(&act[i]);
     UpdatePlannedCoordinates(&action);
     led1 = 0;
   }
 #endif
-
 }
-
 
 /**
 ***Destructor
 **/
-LaosMotion::~LaosMotion()
-{
-
+LaosMotion::~LaosMotion() {
 }
-
 
 /**
 *** reset()
 *** reset the state
 **/
-void LaosMotion::reset()
-{
+void LaosMotion::reset() {
   extern GlobalConfig *cfg;
-  #ifdef READ_FILE_DEBUG
-    printf("LaosMotion::reset()\n");
-  #endif
+#ifdef READ_FILE_DEBUG
+  printf("LaosMotion::reset()\n");
+#endif
   xstep = xdir = ystep = ydir = zstep = zdir = step = command = 0;
   m_PlannedXAbsolute = 0;
   m_PlannedYAbsolute = 0;
@@ -140,73 +133,60 @@ void LaosMotion::reset()
   cover.mode(PullUp);
 }
 
-
-
 /**
 *** ready()
 *** ready to receive new commands
 **/
-int LaosMotion::ready()
-{
+int LaosMotion::ready() {
   return !plan_queue_full();
 }
-
 
 /**
 *** queue()
 *** return nr of items in the queue (0 is empty)
 **/
-int LaosMotion::queue()
-{
+int LaosMotion::queue() {
   return plan_queue_items();
 }
-
-
-
 
 /**
 *** MoveTo()
 **/
-void LaosMotion::moveToRelativeToOrigin(int x, int y, int z, int speed, int power)
-{
-  moveToAbsolute(x-ofsx, y-ofsy, z-ofsz, speed, power);
+void LaosMotion::moveToRelativeToOrigin(int x, int y, int z, int speed, int power) {
+  moveToAbsolute(x - ofsx, y - ofsy, z - ofsz, speed, power);
 }
 
-void LaosMotion::moveToAbsolute(int x, int y, int z, int speed, int power)
-{
+void LaosMotion::moveToAbsolute(int x, int y, int z, int speed, int power) {
   extern GlobalConfig *cfg;
   int feedrate = (speed * 60.0 * cfg->speed) / 100;
   moveToAbsoluteWithAbsoluteFeedrate(x, y, z, feedrate, power, AT_MOVE);
 }
 
-void LaosMotion::moveToRelativeToOriginWithAbsoluteFeedrate(int x, int y, int z, int feedrate, int power, eActionType actiontype)
-{
-  moveToAbsoluteWithAbsoluteFeedrate(x-ofsx, y-ofsy, z-ofsz, feedrate, power, actiontype);
+void LaosMotion::moveToRelativeToOriginWithAbsoluteFeedrate(int x, int y, int z, int feedrate, int power, eActionType actiontype) {
+  moveToAbsoluteWithAbsoluteFeedrate(x - ofsx, y - ofsy, z - ofsz, feedrate, power, actiontype);
 }
 
-void LaosMotion::moveToAbsoluteWithAbsoluteFeedrate(int x, int y, int z, int feedrate, int power, eActionType actiontype)
-{
+void LaosMotion::moveToAbsoluteWithAbsoluteFeedrate(int x, int y, int z, int feedrate, int power, eActionType actiontype) {
   extern GlobalConfig *cfg;
-  if(x < cfg->xmin) x=cfg->xmin;
-  if(y < cfg->ymin) y=cfg->ymin;
-  if(z < cfg->zmin) z=cfg->zmin;
-  if(x > cfg->xmax) x=cfg->xmax;
-  if(y > cfg->ymax) y=cfg->ymax;
-  if(z > cfg->zmax) z=cfg->zmax;
+  if (x < cfg->xmin) x = cfg->xmin;
+  if (y < cfg->ymin) y = cfg->ymin;
+  if (z < cfg->zmin) z = cfg->zmin;
+  if (x > cfg->xmax) x = cfg->xmax;
+  if (y > cfg->ymax) y = cfg->ymax;
+  if (z > cfg->zmax) z = cfg->zmax;
   tActionRequest action;
-  action.target.x = x/1000.0;
-  action.target.y = y/1000.0;
-  action.target.z = z/1000.0;
+  action.target.x = x / 1000.0;
+  action.target.y = y / 1000.0;
+  action.target.z = z / 1000.0;
   action.ActionType = actiontype;
-  action.target.feed_rate =  feedrate;
+  action.target.feed_rate = feedrate;
   action.param = power;
   plan_buffer_line(&action);
   UpdatePlannedCoordinates(&action);
-   //printf("To buffer: %d, %d, %d, %d\n", x, y,z,speed);
+  // printf("To buffer: %d, %d, %d, %d\n", x, y,z,speed);
 }
 
-void LaosMotion::UpdatePlannedCoordinates(const tActionRequest *action)
-{
+void LaosMotion::UpdatePlannedCoordinates(const tActionRequest *action) {
   m_PlannedXAbsolute = action->target.x * 1000.0;
   m_PlannedYAbsolute = action->target.y * 1000.0;
   m_PlannedZAbsolute = action->target.z * 1000.0;
@@ -217,176 +197,167 @@ void LaosMotion::UpdatePlannedCoordinates(const tActionRequest *action)
 *** Write command and parameters to motion controller
 *** Parse all the integers found in the simplecode file per integer
 **/
-void LaosMotion::write(int i)
-{
+void LaosMotion::write(int i) {
   extern GlobalConfig *cfg;
-  static int x=0,y=0,z=0;
-  //if (  plan_queue_empty() )
-  //printf("Empty\n");
+  static int x = 0, y = 0, z = 0;
+  // if (  plan_queue_empty() )
+  // printf("Empty\n");
 
+#ifdef READ_FILE_DEBUG_VERBOSE
+  printf(">%i (command: %i, step: %i)\n", i, command, step);
+#endif
 
-  #ifdef READ_FILE_DEBUG_VERBOSE
-    printf(">%i (command: %i, step: %i)\n",i,command,step);
-  #endif
-
-  if ( step == 0 )
-  {
+  if (step == 0) {
     command = i;
     step++;
-  }
-  else
-  {
-     switch( command )
-     {
-          case 0: // move x,y (laser off)
-          case 1: // line x,y (laser on)
-            switch ( step )
-            {
-              case 1:
-                action.target.x = (i-ofsx)/1000.0;
+  } else {
+    switch (command) {
+      case 0:  // move x,y (laser off)
+      case 1:  // line x,y (laser on)
+        switch (step) {
+          case 1:
+            action.target.x = (i - ofsx) / 1000.0;
+            break;
+          case 2:
+            action.target.y = (i - ofsy) / 1000.0;
+            ;
+            step = 0;
+            action.target.z = 0;
+            action.param = power;
+            action.ActionType = (command ? AT_LASER : AT_MOVE);
+            if (bitmap_enable && (action.ActionType == AT_LASER)) {
+              action.ActionType = AT_BITMAP;
+              bitmap_enable = 0;
+            }
+            switch (action.ActionType) {
+              case AT_MOVE:
+                action.target.feed_rate = 60 * cfg->speed;
                 break;
-              case 2:
-                action.target.y = (i-ofsy)/1000.0;;
-                step=0;
-                action.target.z = 0;
-                action.param = power;
-                action.ActionType =  (command ? AT_LASER : AT_MOVE);
-                if ( bitmap_enable && (action.ActionType == AT_LASER))
-                {
-                  action.ActionType = AT_BITMAP;
-                  bitmap_enable = 0;
-                }
-                switch ( action.ActionType )
-                {
-                  case AT_MOVE: action.target.feed_rate = 60 * cfg->speed; break;
-                  case AT_LASER: action.target.feed_rate = 60 * mark_speed; break;
-                  case AT_BITMAP: action.target.feed_rate = 60 * bitmap_speed; break;
-                  case AT_MOVE_ENDSTOP: break;
-                  case AT_WAIT: break;
-                }
+              case AT_LASER:
+                action.target.feed_rate = 60 * mark_speed;
+                break;
+              case AT_BITMAP:
+                action.target.feed_rate = 60 * bitmap_speed;
+                break;
+              case AT_MOVE_ENDSTOP:
+                break;
+              case AT_WAIT:
+                break;
+            }
 
-                if ( action.ActionType == AT_BITMAP )
-                {
-                  while ( queue() );// printf("-"); // wait for queue to empty
-                  plan_set_accel(cfg->xaccel);
-                  plan_buffer_line(&action);
-                  UpdatePlannedCoordinates(&action);
-                  while ( queue() ); // printf("*"); // wait for queue to empty
-                  plan_set_accel(cfg->accel);
-                }
-                else
-                  plan_buffer_line(&action);
-                  UpdatePlannedCoordinates(&action);
-                break;
-            }
+            if (action.ActionType == AT_BITMAP) {
+              while (queue())
+                ;  // printf("-"); // wait for queue to empty
+              plan_set_accel(cfg->xaccel);
+              plan_buffer_line(&action);
+              UpdatePlannedCoordinates(&action);
+              while (queue())
+                ;  // printf("*"); // wait for queue to empty
+              plan_set_accel(cfg->accel);
+            } else
+              plan_buffer_line(&action);
+            UpdatePlannedCoordinates(&action);
             break;
-          case 2: // move z
-            switch(step)
-            {
-              case 1:
-                step = 0;
-                z = action.target.z;
-                action.param = power;
-                action.ActionType =  AT_MOVE;
-                action.target.feed_rate =  60.0 * cfg->speed;
-                plan_buffer_line(&action);
-                UpdatePlannedCoordinates(&action);
-                break;
-            }
+        }
+        break;
+      case 2:  // move z
+        switch (step) {
+          case 1:
+            step = 0;
+            z = action.target.z;
+            action.param = power;
+            action.ActionType = AT_MOVE;
+            action.target.feed_rate = 60.0 * cfg->speed;
+            plan_buffer_line(&action);
+            UpdatePlannedCoordinates(&action);
             break;
-         case 4: // set x,y,z (absolute)
-            switch ( step )
-            {
-              case 1:
-                x = i;
-                break;
-              case 2:
-                y = i;
-                break;
-              case 3:
-                z = i;
-                setPositionRelativeToOrigin(x,y,z);
-                step=0;
-                break;
-            }
+        }
+        break;
+      case 4:  // set x,y,z (absolute)
+        switch (step) {
+          case 1:
+            x = i;
             break;
-         case 5: // nop
-           step = 0;
-           break;
-         case 7: // set index,value
-            switch ( step )
-            {
-              case 1:
-                param = i;
-                break;
-              case 2:
-                val = i;
-                step = 0;
-                switch( param )
-                {
-                  case 100:
-                    if ( val < 1 ) val = 1;
-                    if ( val > 9999 ) val = 10000;
-                    mark_speed = val * cfg->speed / 10000;
-                    bitmap_speed = val * cfg->xspeed / 10000;
-                    #ifdef READ_FILE_DEBUG
-                      printf("> speed: %i\n",mark_speed);
-                    #endif
-                    break;
-                  case 101:
-                    power = val;
-                    #ifdef READ_FILE_DEBUG
-                      printf("> power: %i\n",power);
-                    #endif
-                    break;
-                }
-                break;
-            }
+          case 2:
+            y = i;
             break;
-         case 9: // Store bitmap mark data format: 9 <bpp> <width> <data-0> <data-1> ... <data-n>
-            if ( step == 1 )
-            {
-              bitmap_bpp = i;
-            }
-            else if ( step == 2 )
-            {
-           //   if ( queue() ) printf("Queue not empty... wait...\n\r");
-              while ( queue() );// printf("+"); // wait for queue to empty
-              bitmap_width = i;
-              bitmap_enable = 1;
-              bitmap_size = (bitmap_bpp * bitmap_width) / 32;
-              if  ( (bitmap_bpp * bitmap_width) % 32 )  // padd to next 32-bit
-                bitmap_size++;
-              // printf("\n\rBitmap: read %d dwords\n\r", bitmap_size);
-
-            }
-            else if ( step > 2 )// copy data
-            {
-              bitmap[ (step-3) % BITMAP_SIZE ] = i;
-              // printf("[%ld] = %ld\n", (step-3) % BITMAP_SIZE, i);
-              if ( step-2 == bitmap_size ) // last dword received
-              {
-                bitmap[ (step-2) % BITMAP_SIZE ] = 0;
-                step = 0;
-                // printf("Bitmap: received %d dwords\n\r", bitmap_size);
-              }
-            }
-            break;
-         default: // I do not understand: stop motion
+          case 3:
+            z = i;
+            setPositionRelativeToOrigin(x, y, z);
             step = 0;
             break;
+        }
+        break;
+      case 5:  // nop
+        step = 0;
+        break;
+      case 7:  // set index,value
+        switch (step) {
+          case 1:
+            param = i;
+            break;
+          case 2:
+            val = i;
+            step = 0;
+            switch (param) {
+              case 100:
+                if (val < 1) val = 1;
+                if (val > 9999) val = 10000;
+                mark_speed = val * cfg->speed / 10000;
+                bitmap_speed = val * cfg->xspeed / 10000;
+#ifdef READ_FILE_DEBUG
+                printf("> speed: %i\n", mark_speed);
+#endif
+                break;
+              case 101:
+                power = val;
+#ifdef READ_FILE_DEBUG
+                printf("> power: %i\n", power);
+#endif
+                break;
+            }
+            break;
+        }
+        break;
+      case 9:  // Store bitmap mark data format: 9 <bpp> <width> <data-0> <data-1> ... <data-n>
+        if (step == 1) {
+          bitmap_bpp = i;
+        } else if (step == 2) {
+          //   if ( queue() ) printf("Queue not empty... wait...\n\r");
+          while (queue())
+            ;  // printf("+"); // wait for queue to empty
+          bitmap_width = i;
+          bitmap_enable = 1;
+          bitmap_size = (bitmap_bpp * bitmap_width) / 32;
+          if ((bitmap_bpp * bitmap_width) % 32)  // padd to next 32-bit
+            bitmap_size++;
+          // printf("\n\rBitmap: read %d dwords\n\r", bitmap_size);
+
+        } else if (step > 2)  // copy data
+        {
+          bitmap[(step - 3) % BITMAP_SIZE] = i;
+          // printf("[%ld] = %ld\n", (step-3) % BITMAP_SIZE, i);
+          if (step - 2 == bitmap_size)  // last dword received
+          {
+            bitmap[(step - 2) % BITMAP_SIZE] = 0;
+            step = 0;
+            // printf("Bitmap: received %d dwords\n\r", bitmap_size);
+          }
+        }
+        break;
+      default:  // I do not understand: stop motion
+        step = 0;
+        break;
     }
-    if ( step )
+    if (step)
       step++;
   }
 }
 
-
 /**
 *** Return true if start button is pressed
 **/
-bool LaosMotion::isStart()
-{
+bool LaosMotion::isStart() {
   return cover;
 }
 
@@ -395,29 +366,26 @@ bool LaosMotion::isStart()
 *** Warning: only call when the motion is not busy!
 *** current offset is taken into account
 **/
-void LaosMotion::setPositionRelativeToOrigin(int x, int y, int z)
-{
-  setPositionAbsolute(x-ofsx, y-ofsy, z-ofsz);
+void LaosMotion::setPositionRelativeToOrigin(int x, int y, int z) {
+  setPositionAbsolute(x - ofsx, y - ofsy, z - ofsz);
 }
 
 /**
 *** Hard set the position
 *** Warning: only call when the motion is not busy!
 **/
-void LaosMotion::setPositionAbsolute(int x, int y, int z)
-{
+void LaosMotion::setPositionAbsolute(int x, int y, int z) {
   m_PlannedXAbsolute = x;
   m_PlannedYAbsolute = y;
   m_PlannedZAbsolute = z;
-  plan_set_current_position_xyz(x/1000.0,y/1000.0,z/1000.0);
+  plan_set_current_position_xyz(x / 1000.0, y / 1000.0, z / 1000.0);
 }
 
 /**
 *** get the position
 *** The result is offset by the current offset location
 **/
-void LaosMotion::getCurrentPositionRelativeToOrigin(int *x, int *y, int *z)
-{
+void LaosMotion::getCurrentPositionRelativeToOrigin(int *x, int *y, int *z) {
   getCurrentPositionAbsolute(x, y, z);
   *x += ofsx;
   *y += ofsy;
@@ -427,39 +395,35 @@ void LaosMotion::getCurrentPositionRelativeToOrigin(int *x, int *y, int *z)
 /**
 *** get the actual position
 **/
-void LaosMotion::getCurrentPositionAbsolute(int *x, int *y, int *z)
-{
-  float xx,yy,zz;
+void LaosMotion::getCurrentPositionAbsolute(int *x, int *y, int *z) {
+  float xx, yy, zz;
   plan_get_current_position_xyz(&xx, &yy, &zz);
   *x = xx * 1000;
   *y = yy * 1000;
   *z = zz * 1000;
 }
 
-void LaosMotion::getPlannedPositionRelativeToOrigin(int *x, int *y, int *z)
-{
+void LaosMotion::getPlannedPositionRelativeToOrigin(int *x, int *y, int *z) {
   getPlannedPositionAbsolute(x, y, z);
   *x += ofsx;
   *y += ofsy;
   *z += ofsz;
 }
 
-void LaosMotion::getPlannedPositionAbsolute(int *x, int *y, int *z)
-{
+void LaosMotion::getPlannedPositionAbsolute(int *x, int *y, int *z) {
   *x = m_PlannedXAbsolute;
   *y = m_PlannedYAbsolute;
   *z = m_PlannedZAbsolute;
 }
 
-void LaosMotion::getLimitsRelative(int *minx, int *miny, int *minz, int *maxx, int *maxy, int *maxz)
-{
+void LaosMotion::getLimitsRelative(int *minx, int *miny, int *minz, int *maxx, int *maxy, int *maxz) {
   extern GlobalConfig *cfg;
-  *minx=cfg->xmin + ofsx;
-  *miny=cfg->ymin + ofsy;
-  *minz=cfg->zmin + ofsz;
-  *maxx=cfg->xmax + ofsx;
-  *maxy=cfg->ymax + ofsy;
-  *maxz=cfg->zmax + ofsz;
+  *minx = cfg->xmin + ofsx;
+  *miny = cfg->ymin + ofsy;
+  *minz = cfg->zmin + ofsz;
+  *maxx = cfg->xmax + ofsx;
+  *maxy = cfg->ymax + ofsy;
+  *maxz = cfg->zmax + ofsz;
 }
 
 /**
@@ -467,8 +431,7 @@ void LaosMotion::getLimitsRelative(int *minx, int *miny, int *minz, int *maxx, i
 *** set to (0,0,0) to reset the orgin back to its original position.
 *** Note: Make sure you only call this at stand-still (motion queue is empty), otherwise strange things may happen
 **/
-void LaosMotion::setOriginAbsolute(int x, int y, int z)
-{
+void LaosMotion::setOriginAbsolute(int x, int y, int z) {
   ofsx = -x;
   ofsy = -y;
   ofsz = -z;
@@ -478,24 +441,20 @@ void LaosMotion::setOriginAbsolute(int x, int y, int z)
   Make current position the origin. 'origin' is defined here as the top left corner (0,0) in Visicut
   Since LAOS has the y coordinate 0 at the bottom of the bed, we need to offset by the bed height.
 */
-void LaosMotion::MakeCurrentPositionOrigin()
-{
+void LaosMotion::MakeCurrentPositionOrigin() {
   extern GlobalConfig *cfg;
-  int x,y,z;
+  int x, y, z;
   getCurrentPositionAbsolute(&x, &y, &z);
   y -= cfg->BedHeight();
   setOriginAbsolute(x, y, z);
 }
 
-
-
 /**
 *** Home the axis, stop when both home switches are pressed
 **/
-void LaosMotion::home(int x, int y, int z)
-{
+void LaosMotion::home(int x, int y, int z) {
   extern GlobalConfig *cfg;
-  int i=0;
+  int i = 0;
   printf("Homing %d,%d, with speed %d\n", x, y, cfg->homespeed);
   xdir = cfg->xhomedir;
   ydir = cfg->yhomedir;
@@ -506,36 +465,30 @@ void LaosMotion::home(int x, int y, int z)
   if (cfg->autozhome) {
     printf("Homing %d with speed %d\n", z, cfg->zhomespeed);
     while ((zmin ^ cfg->zpol) && (zmax ^ cfg->zpol)) {
-        zstep = 0;
-        wait(cfg->zhomespeed/1E6);
-        zstep = 1;
-        wait(cfg->zhomespeed/1E6);
+      zstep = 0;
+      wait(cfg->zhomespeed / 1E6);
+      zstep = 1;
+      wait(cfg->zhomespeed / 1E6);
     }
   }
   printf("Home XY...\n\r");
-  while ( 1 )
-  {
+  while (1) {
     xstep = ystep = 0;
-    wait(cfg->homespeed/1E6);
+    wait(cfg->homespeed / 1E6);
     xstep = xhome ^ cfg->xpol;
     ystep = yhome ^ cfg->ypol;
-    wait(cfg->homespeed/1E6);
+    wait(cfg->homespeed / 1E6);
 
     led2 = !xhome;
     led3 = !yhome;
     led4 = ((i++) & 0x10000);
-    if ( !(xhome ^ cfg->xpol) && !(yhome ^ cfg->ypol) )
-    {
-      setOriginAbsolute(0, 0, 0); // reset origin
-      setPositionAbsolute(x,y,z);
-      moveToAbsolute(x,y,z);
+    if (!(xhome ^ cfg->xpol) && !(yhome ^ cfg->ypol)) {
+      setOriginAbsolute(0, 0, 0);  // reset origin
+      setPositionAbsolute(x, y, z);
+      moveToAbsolute(x, y, z);
       isHome = true;
       printf("Home done.\n\r");
       return;
     }
   }
-
 }
-
-
-
