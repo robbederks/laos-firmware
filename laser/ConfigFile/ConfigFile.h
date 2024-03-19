@@ -44,59 +44,57 @@
 #include "global.h"
 #include "laosfilesystem.h"
 
-    /** Simple config file object
-      * Only supports reading config files. Tries to limit memory usage.
-      * Note: the file handle is kept open during the lifetime of this object.
-      * To close the file: destroy this ConfigFile object! A simple way is to enclose the creation
-      * of this object inside a code block
-      * Example:
-      * @code
-      * char ip[16];
-      * int port;
-      * {
-      *   ConfigFile cfg("/local/config.txt");
-      *   cfg.Value("ip", ip, sizeof(ip), "192.168.1.10");
-      *   cfg.Value("port", &port, 80);
-      * }
-      * @endcode
-      */
+/** Simple config file object
+ * Only supports reading config files. Tries to limit memory usage.
+ * Note: the file handle is kept open during the lifetime of this object.
+ * To close the file: destroy this ConfigFile object! A simple way is to enclose the creation
+ * of this object inside a code block
+ * Example:
+ * @code
+ * char ip[16];
+ * int port;
+ * {
+ *   ConfigFile cfg("/local/config.txt");
+ *   cfg.Value("ip", ip, sizeof(ip), "192.168.1.10");
+ *   cfg.Value("port", &port, 80);
+ * }
+ * @endcode
+ */
 class ConfigFile {
-public:
-    /** Make new ConfigFile object. Open config file.
-      * Note: the file handle is kept open during the lifetime of this object.
-      * To close the file: destroy this ConfigFile object!
-      * @param file Filename of the configuration file.
-      */
-    ConfigFile(char *name);
+ public:
+  /** Make new ConfigFile object. Open config file.
+   * Note: the file handle is kept open during the lifetime of this object.
+   * To close the file: destroy this ConfigFile object!
+   * @param file Filename of the configuration file.
+   */
+  ConfigFile(char *name);
 
-    ~ConfigFile();
+  ~ConfigFile();
 
-/** Read value. If file is not open, or key does not exist: copy default value (return false)
-  * @param key name of the key in the file
-  * @param value pointer to buffer that receives the value
-  * @param maxlen the maximum length of the value. If the actual value is longer, it is truncated
-  * @param def Default value. If the key is not found in the file, this value is copied.
-  * @return "true" if the key is found "false" is key is not found (default value is returned)
-  */
-    bool Value(const std::string& key, char *value,  size_t maxlen, const std::string& def);
+  /** Read value. If file is not open, or key does not exist: copy default value (return false)
+   * @param key name of the key in the file
+   * @param value pointer to buffer that receives the value
+   * @param maxlen the maximum length of the value. If the actual value is longer, it is truncated
+   * @param def Default value. If the key is not found in the file, this value is copied.
+   * @return "true" if the key is found "false" is key is not found (default value is returned)
+   */
+  bool Value(const std::string &key, char *value, size_t maxlen, const std::string &def);
 
-/** Read Integer value. If file is not open, or key does not exist: copy default value (return false)
-  * @param key name of the key in the file
-  * @param value pointer to integer that receives the value
-  * @param def Default value. If the key is not found in the file, this value is copied.
-  * @return "true" if the key is found "false" is key is not found (default value is returned)
-  */
-    bool Value(const std::string& key, int *value, int def);
+  /** Read Integer value. If file is not open, or key does not exist: copy default value (return false)
+   * @param key name of the key in the file
+   * @param value pointer to integer that receives the value
+   * @param def Default value. If the key is not found in the file, this value is copied.
+   * @return "true" if the key is found "false" is key is not found (default value is returned)
+   */
+  bool Value(const std::string &key, int *value, int def);
 
   /** See if file was present
-  * @return "true" if file is open, "false" file is not found
-  */
+   * @return "true" if file is open, "false" file is not found
+   */
   bool IsOpen(void) { return fp != NULL; }
 
-private:
-    FILE *fp;
-
+ private:
+  FILE *fp;
 };
-
 
 #endif

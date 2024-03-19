@@ -18,55 +18,56 @@
  *
  *   You should have received a copy of the GNU General Public License
  *   along with LaOS.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 #ifndef _GLOBAL_H_
 #define _GLOBAL_H_
- 
-#include "mbed.h"
+
 #include <string>
+
 #include "ConfigFile.h"
+#include "mbed.h"
 typedef char IPAddress[16];
-void IpParse(char *a, int i[]);
+void IpParse(char* a, int i[]);
 
 // Global configuration struct
-class GlobalConfig
-{
-public:
-  enum {VERYLARGE = 0x7fffffff, MINUSVERYLARGE = 0x80000000};
+class GlobalConfig {
+ public:
+  enum { VERYLARGE = 0x7fffffff,
+         MINUSVERYLARGE = 0x80000000 };
 
   GlobalConfig(const std::string& filename);
   int BedHeight() const;
 
   IPAddress ip, gw, nm, dns;
-  int port, dhcp;  // network settings
-  int enable; // enable state (1 or 0)
-  int autohome; // automatically home the axis at startup
-  int autozhome; // automatically home the zaxis as well
-  int nodisplay; // there is no display 
-  int cleandir; // remove files from SD at startup
-  int i2cbaud; // i2cBaudrate
-  int disablecancelcheck; // if the check for cancel button should be disabled while a job is running
-  int xmax, ymax, zmax, emax; // max values
-  int xmin, ymin, zmin, emin; // min values
-  int xpol, ypol, zpol, epol; // polarity for the home switches
-  int xinv, yinv, zinv, einv; // invert signal polarity for step/dir
-  int xhome, yhome, zhome, ehome; // home position
-  int xrest, yrest, zrest, erest; // rest positon (moveto after job)
+  int port, dhcp;                  // network settings
+  int enable;                      // enable state (1 or 0)
+  int autohome;                    // automatically home the axis at startup
+  int autozhome;                   // automatically home the zaxis as well
+  int nodisplay;                   // there is no display
+  int cleandir;                    // remove files from SD at startup
+  int i2cbaud;                     // i2cBaudrate
+  int disablecancelcheck;          // if the check for cancel button should be disabled while a job is running
+  int xmax, ymax, zmax, emax;      // max values
+  int xmin, ymin, zmin, emin;      // min values
+  int xpol, ypol, zpol, epol;      // polarity for the home switches
+  int xinv, yinv, zinv, einv;      // invert signal polarity for step/dir
+  int xhome, yhome, zhome, ehome;  // home position
+  int xrest, yrest, zrest, erest;  // rest positon (moveto after job)
   int xhomedir, yhomedir, zhomedir, ehomedir;
-  int homespeed, zhomespeed; // speed used for homing [usec/step]
-  int speed, xspeed, yspeed, zspeed, espeed; // Maximum linear speed and max speed per axis [mm/sec]
-  int accel; // defaul accelletaion [mm/sec2]
-  int xaccel, yaccel, zaccel, eaccel; // axis max acceleration [mm/sec2]
-  int tolerance; // corner tolerance [micrometer]
-  int xscale; // steps per meter
-  int yscale; // steps per meter
-  int zscale; // steps per meter
-  int escale; // steps per meter
-  int lenable, lon, pwmmin, pwmmax, pwmfreq; // laser enable, laser on and pwm min/max [%] and frequency [Hz];
-  int exhaust, exhaust_offdelay; // How long to continue powering air 
-  int dir_us, pulse_us; // extra wait time for longer pulse/dir
-	// nozzle/exhaust after job has ended (seconds).
+  int homespeed, zhomespeed;                  // speed used for homing [usec/step]
+  int speed, xspeed, yspeed, zspeed, espeed;  // Maximum linear speed and max speed per axis [mm/sec]
+  int accel;                                  // defaul accelletaion [mm/sec2]
+  int xaccel, yaccel, zaccel, eaccel;         // axis max acceleration [mm/sec2]
+  int tolerance;                              // corner tolerance [micrometer]
+  int xscale;                                 // steps per meter
+  int yscale;                                 // steps per meter
+  int zscale;                                 // steps per meter
+  int escale;                                 // steps per meter
+  int lenable, lon, pwmmin, pwmmax, pwmfreq;  // laser enable, laser on and pwm min/max [%] and frequency [Hz];
+  int exhaust, exhaust_offdelay;              // How long to continue powering air
+  int dir_us, pulse_us;                       // extra wait time for longer pulse/dir
+                                              // nozzle/exhaust after job has ended (seconds).
 };
 
 #ifndef __GIT_HASH
@@ -74,6 +75,5 @@ public:
 #endif
 
 #define VERSION_STRING "\033LAOS v0.4-" __GIT_HASH "\n" __DATE__ " " __TIME__
-
 
 #endif
