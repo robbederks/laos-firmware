@@ -19,7 +19,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with LaOS.  If not, see <http://www.gnu.org/licenses/>.
  *
- * 
+ *
  *
  */
 #ifndef _LAOSMOTION_H_
@@ -31,12 +31,12 @@
     /** Motion Controll system
       *
       * Example:
-      * @code 
+      * @code
       * @endcode
       */
 class LaosMotion {
 public:
-    /** Make new LaosMotion object. 
+    /** Make new LaosMotion object.
       * Installs ticker
       */
   LaosMotion();

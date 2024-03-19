@@ -223,12 +223,12 @@ void LaosMotion::write(int i)
   static int x=0,y=0,z=0;
   //if (  plan_queue_empty() )
   //printf("Empty\n");
-  
-  
+
+
   #ifdef READ_FILE_DEBUG_VERBOSE
     printf(">%i (command: %i, step: %i)\n",i,command,step);
-  #endif 
-  
+  #endif
+
   if ( step == 0 )
   {
     command = i;
@@ -264,7 +264,7 @@ void LaosMotion::write(int i)
                   case AT_MOVE_ENDSTOP: break;
                   case AT_WAIT: break;
                 }
-                
+
                 if ( action.ActionType == AT_BITMAP )
                 {
                   while ( queue() );// printf("-"); // wait for queue to empty
@@ -331,13 +331,13 @@ void LaosMotion::write(int i)
                     bitmap_speed = val * cfg->xspeed / 10000;
                     #ifdef READ_FILE_DEBUG
                       printf("> speed: %i\n",mark_speed);
-                    #endif  
+                    #endif
                     break;
                   case 101:
                     power = val;
                     #ifdef READ_FILE_DEBUG
                       printf("> power: %i\n",power);
-                    #endif  
+                    #endif
                     break;
                 }
                 break;
@@ -441,7 +441,7 @@ void LaosMotion::getPlannedPositionRelativeToOrigin(int *x, int *y, int *z)
   getPlannedPositionAbsolute(x, y, z);
   *x += ofsx;
   *y += ofsy;
-  *z += ofsz;  
+  *z += ofsz;
 }
 
 void LaosMotion::getPlannedPositionAbsolute(int *x, int *y, int *z)
@@ -474,7 +474,7 @@ void LaosMotion::setOriginAbsolute(int x, int y, int z)
   ofsz = -z;
 }
 
-/* 
+/*
   Make current position the origin. 'origin' is defined here as the top left corner (0,0) in Visicut
   Since LAOS has the y coordinate 0 at the bottom of the bed, we need to offset by the bed height.
 */

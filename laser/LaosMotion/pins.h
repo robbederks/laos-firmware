@@ -32,8 +32,8 @@ extern DigitalIn zmax;
 extern PwmOut pwm;              // O1: PWM (Yellow)
 extern DigitalOut laser_enable; // O2: enable laser
 extern DigitalOut exhaust;      // 03: NC
-extern DigitalOut *laser;       // O4: LaserON (White), do not statically 
-                                //     allocate: because this will cause the 
+extern DigitalOut *laser;       // O4: LaserON (White), do not statically
+                                //     allocate: because this will cause the
                                 //     laser to switch on at boot
 #define LASER_PIN p5            // note: we define the laser pin here and do i
                                 // not allocate the laser DigitalOut()
