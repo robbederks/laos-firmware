@@ -260,19 +260,19 @@ void LaosMotion::write(int i) {
             break;
         }
         break;
-      // case 2:  // move z
-      //   switch (step) {
-      //     case 1:
-      //       step = 0;
-      //       z = action.target.z;
-      //       action.param = power;
-      //       action.ActionType = AT_MOVE;
-      //       action.target.feed_rate = 60.0 * cfg->speed;
-      //       plan_buffer_line(&action);
-      //       UpdatePlannedCoordinates(&action);
-      //       break;
-      //   }
-      //   break;
+      case 2:  // move z
+        // switch (step) {
+        //   case 1:
+        //     step = 0;
+        //     z = action.target.z;
+        //     action.param = power;
+        //     action.ActionType = AT_MOVE;
+        //     action.target.feed_rate = 60.0 * cfg->speed;
+        //     plan_buffer_line(&action);
+        //     UpdatePlannedCoordinates(&action);
+        //     break;
+        // }
+        break;
       case 4:  // set x,y,z (absolute)
         switch (step) {
           case 1:
@@ -440,13 +440,11 @@ void LaosMotion::setOriginAbsolute(int x, int y, int z) {
 
 /*
   Make current position the origin. 'origin' is defined here as the top left corner (0,0) in Visicut
-  Since LAOS has the y coordinate 0 at the bottom of the bed, we need to offset by the bed height.
 */
 void LaosMotion::MakeCurrentPositionOrigin() {
   extern GlobalConfig *cfg;
   int x, y, z;
   getCurrentPositionAbsolute(&x, &y, &z);
-  y -= cfg->BedHeight();
   setOriginAbsolute(x, y, z);
 }
 
@@ -483,7 +481,7 @@ void LaosMotion::home(int x, int y, int z) {
     led2 = !xhome;
     led3 = !yhome;
     led4 = ((i++) & 0x10000);
-    if (!(xhome ^ cfg->xpol) && !(yhome ^ cfg->ypol)) {
+    if (!(xhome ^ cfg->xpol) && (!(yhome ^ cfg->ypol) || (i > 80000))) {
       setOriginAbsolute(0, 0, 0);  // reset origin
       setPositionAbsolute(x, y, z);
       moveToAbsolute(x, y, z);

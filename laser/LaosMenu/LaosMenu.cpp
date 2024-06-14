@@ -26,21 +26,21 @@
 #include "stepper.h"
 
 static const char *menus[] = {
-    "STARTUP",     // 0
-    "MAIN",        // 1
-    "START JOB",   // 2
-    "BOUNDARIES",  // 3
-    "DELETE JOB",  // 4
-    "HOME",        // 5
-    "MOVE",        // 6
-    // "FOCUS",            // 7
+    "STARTUP",          // 0
+    "MAIN",             // 1
+    "START JOB",        // 2
+    "BOUNDARIES",       // 3
+    "DELETE JOB",       // 4
+    "HOME",             // 5
+    "MOVE",             // 6
+    "FOCUS",            // 7
     "ORIGIN",           // 8
     "REMOVE ALL JOBS",  // 9
     "IP",               // 10
     "REBOOT",           // 11
     "LASER TEST",       // 12
-                        // "POWER / SPEED",//12
-                        // "IO", //13
+    // "POWER / SPEED",//12
+    // "IO", //13
 };
 
 static const char *screens[] = {
@@ -74,11 +74,11 @@ static const char *screens[] = {
     "X: +6543210 MOVE"
     "Y: +6543210     ",
 
-// #define FOCUS (MOVE + 1)
-//     "Z: +543210 FOCUS"
-//     "                ",
+#define FOCUS (MOVE + 1)
+    "Z: +543210 FOCUS"
+    "                ",
 
-#define ORIGIN (MOVE + 1)
+#define ORIGIN (FOCUS + 1)
     "  SET ORIGIN?   "
     "      [ok]      ",
 
@@ -283,22 +283,20 @@ void LaosMenu::Handle() {
           case K_CANCEL:
             menu = MAIN;
             break;
-            //   case K_FUP:
-            //     lastscreen = MAIN;
-            //     screen = FOCUS;
-            //     menu = MAIN;
-            //     break;
-            //   case K_FDOWN:
-            //     lastscreen = MAIN;
-            //     screen = FOCUS;
-            //     menu = MAIN;
-            //     break;
+          case K_FUP:
+            lastscreen = MAIN;
+            screen = FOCUS;
+            menu = MAIN;
+            break;
+          case K_FDOWN:
+            lastscreen = MAIN;
+            screen = FOCUS;
+            menu = MAIN;
+            break;
           case K_ORIGIN:
             lastscreen = MAIN;
             screen = ORIGIN;
             waitup = 1;
-            break;
-          default:
             break;
         }
         if (menu == 0) menu = (sizeof(menus) / sizeof(menus[0])) - 1;
@@ -393,18 +391,16 @@ void LaosMenu::Handle() {
             waitup = 1;
             break;
             //                        case K_FUP: screen=FOCUS; break;
-          // case K_FUP:
-          //   // use the Focus Up button to display debugging data for the stepper interrupt:
-          //   st_debug();
-          //   screen = FOCUS;
-          //   break;
-          // case K_FDOWN:
-          //   screen = FOCUS;
-          //   break;
+          case K_FUP:
+            // use the Focus Up button to display debugging data for the stepper interrupt:
+            st_debug();
+            screen = FOCUS;
+            break;
+          case K_FDOWN:
+            screen = FOCUS;
+            break;
           case K_ORIGIN:
             screen = ORIGIN;
-            break;
-          default:
             break;
         }
         printf("Move: c: %d, numinqueue: %d, xt: %d, yt: %d,  waitempty: %d\n",
@@ -448,56 +444,56 @@ void LaosMenu::Handle() {
         args[1] = y;
       } break;
 
-        //   case FOCUS:  // focus
-        //   {
-        //     int x, y, z;
-        //     mot->getCurrentPositionRelativeToOrigin(&x, &y, &z);
-        //     int zt = z;
-        //     switch (c) {
-        //       case K_FUP:
-        //         z += cfg->zspeed * speed;
-        //         if (z > cfg->zmax) z = cfg->zmax;
-        //         break;
-        //       case K_FDOWN:
-        //         z -= cfg->zspeed * speed;
-        //         if (z < 0) z = 0;
-        //         break;
-        //       case K_LEFT:
-        //         break;
-        //       case K_RIGHT:
-        //         break;
-        //       case K_UP:
-        //         z += cfg->zspeed * speed;
-        //         if (z > cfg->zmax) z = cfg->zmax;
-        //         break;
-        //       case K_DOWN:
-        //         z -= cfg->zspeed * speed;
-        //         if (z < 0) z = 0;
-        //         break;
-        //       case K_ORIGIN:
-        //         screen = ORIGIN;
-        //         break;
-        //       case K_OK:
-        //       case K_CANCEL:
-        //         screen = MAIN;
-        //         waitup = 1;
-        //         break;
-        //       case 0:
-        //         break;
-        //       default:
-        //         screen = MAIN;
-        //         waitup = 1;
-        //         break;
-        //     }
-        //     int numinqueue = mot->queue();
-        //     if (mot->ready() && (z != zt) && (numinqueue == 0)) {
-        //       mot->moveToRelativeToOrigin(x, y, z, speed);
-        //       printf("Focus: %d %d %d %d\n", x, y, z, speed);
-        //       speed = speed * 3;
-        //       if (speed > 100) speed = 100;
-        //     }
-        //     args[0] = z;
-        //   } break;
+      case FOCUS:  // focus
+      {
+        int x, y, z;
+        mot->getCurrentPositionRelativeToOrigin(&x, &y, &z);
+        int zt = z;
+        switch (c) {
+          case K_FUP:
+            z += cfg->zspeed * speed;
+            if (z > cfg->zmax) z = cfg->zmax;
+            break;
+          case K_FDOWN:
+            z -= cfg->zspeed * speed;
+            if (z < 0) z = 0;
+            break;
+          case K_LEFT:
+            break;
+          case K_RIGHT:
+            break;
+          case K_UP:
+            z += cfg->zspeed * speed;
+            if (z > cfg->zmax) z = cfg->zmax;
+            break;
+          case K_DOWN:
+            z -= cfg->zspeed * speed;
+            if (z < 0) z = 0;
+            break;
+          case K_ORIGIN:
+            screen = ORIGIN;
+            break;
+          case K_OK:
+          case K_CANCEL:
+            screen = MAIN;
+            waitup = 1;
+            break;
+          case 0:
+            break;
+          default:
+            screen = MAIN;
+            waitup = 1;
+            break;
+        }
+        int numinqueue = mot->queue();
+        if (mot->ready() && (z != zt) && (numinqueue == 0)) {
+          mot->moveToRelativeToOrigin(x, y, z, speed);
+          printf("Focus: %d %d %d %d\n", x, y, z, speed);
+          speed = speed * 3;
+          if (speed > 100) speed = 100;
+        }
+        args[0] = z;
+      } break;
 
       case HOME:  // home
         switch (c) {
