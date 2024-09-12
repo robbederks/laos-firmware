@@ -144,15 +144,15 @@ void LaosExtent::Write(int i) {
 
 void LaosExtent::ShowBoundaries(LaosMotion *mot) const {
   if ((!m_Error) && (m_HasMinMaxCoordinates)) {
-    int dummy1, dummy2, z;
-    mot->getPlannedPositionRelativeToOrigin(&dummy1, &dummy2, &z);
     for (int step = 0; step <= 4; step++) {
-      int x, y;
+      int x, y, z;
       // start in bottom right corner, then go counter clockwise:
       if ((step == 1) || (step == 2)) {
         y = m_MaxY;
+				z = m_MaxY;
       } else {
         y = m_MinY;
+				z = m_MinY;
       }
       if ((step == 2) || (step == 3)) {
         x = m_MinX;

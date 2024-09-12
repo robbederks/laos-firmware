@@ -373,9 +373,11 @@ void LaosMenu::Handle() {
         switch (c) {
           case K_DOWN:
             y -= 100 * speed;
+            z -= 100 * speed;
             break;
           case K_UP:
             y += 100 * speed;
+            z += 100 * speed;
             break;
           case K_LEFT:
             x -= 100 * speed;
